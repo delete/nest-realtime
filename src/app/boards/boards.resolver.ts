@@ -8,6 +8,7 @@ import { BoardsService } from './boards.service';
 
 enum BoardEvents {
   BOARD_CREATED = 'boardCreated',
+  BOARD_REMOVED = 'boardRemoved',
 }
 
 @Resolver(of => Board)
@@ -38,7 +39,9 @@ export class BoardsResolver {
   ): Promise<Board> {
     const newBoard = await this.boardsService.create(newBoardData);
 
-    this.pubsub.publish(BoardEvents.BOARD_CREATED, { newBoard });
+    this.pubsub.publish(BoardEvents.BOARD_CREATED, {
+      [BoardEvents.BOARD_CREATED]: newBoard,
+    });
 
     return newBoard;
   }
@@ -46,11 +49,21 @@ export class BoardsResolver {
   @Mutation(returns => Boolean)
   async removeBoard(@Args('id') id: string) {
     const removedBoard = await this.boardsService.remove(id);
+
+    this.pubsub.publish(BoardEvents.BOARD_REMOVED, {
+      [BoardEvents.BOARD_REMOVED]: removedBoard,
+    });
+
     return !!removedBoard;
   }
 
   @Subscription(returns => Board)
   async boardCreated() {
     return this.pubsub.asyncIterator(BoardEvents.BOARD_CREATED);
+  }
+
+  @Subscription(returns => Board)
+  async boardRemoved() {
+    return this.pubsub.asyncIterator(BoardEvents.BOARD_REMOVED);
   }
 }

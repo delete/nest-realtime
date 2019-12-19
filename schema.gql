@@ -26,4 +26,5 @@ type Query {
 
 type Subscription {
   boardCreated: Board!
+  boardRemoved: Board!
 }
