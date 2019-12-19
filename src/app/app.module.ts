@@ -9,6 +9,7 @@ import { BoardsModule } from './boards/boards.module';
     MongooseModule.forRoot('mongodb://localhost/nest', {
       useUnifiedTopology: true,
       useNewUrlParser: true,
+      useFindAndModify: false,
     }),
     GraphQLModule.forRoot({
       installSubscriptionHandlers: true,

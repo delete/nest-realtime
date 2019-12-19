@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { Board } from './board.entiy';
-import { NewBoardInput } from './create-board.dto';
+import { Board } from './entity/board.entity';
+import { NewBoardInput } from './dto/new-board-input.dto';
 
 @Injectable()
 export class BoardsService {
@@ -22,11 +22,17 @@ export class BoardsService {
     return this.boardModel.find().exec();
   }
 
-  async findOneById(id: string): Promise<Board> {
+  async findOneById(id: string): Promise<Board | null> {
     return this.boardModel.findById(id).exec();
   }
 
-  async remove(id: string): Promise<boolean> {
-    return this.boardModel.findByIdAndRemove(id).exec();
+  async remove(id: string): Promise<Board | null> {
+    const removedBoard = await this.boardModel.findByIdAndRemove(id).exec();
+
+    if (removedBoard) {
+      removedBoard.id = removedBoard._id;
+    }
+
+    return removedBoard;
   }
 }

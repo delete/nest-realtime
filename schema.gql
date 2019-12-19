@@ -11,7 +11,7 @@ type Board {
 
 type Mutation {
   createBoard(newBoardInput: NewBoardInput!): Board!
-  removeRecipe(id: String!): Boolean!
+  removeBoard(id: String!): Boolean!
 }
 
 input NewBoardInput {
@@ -22,4 +22,8 @@ input NewBoardInput {
 type Query {
   board(id: String!): Board!
   boards: [Board!]!
+}
+
+type Subscription {
+  boardCreated: Board!
 }

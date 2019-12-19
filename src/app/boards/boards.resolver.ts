@@ -1,17 +1,26 @@
-import { NotFoundException } from '@nestjs/common';
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { NotFoundException, Inject } from '@nestjs/common';
+import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
+import { PubSub } from 'graphql-subscriptions';
 
-import { Board } from './board.model';
+import { Board } from './model/board.model';
+import { NewBoardInput } from './dto/new-board-input.dto';
 import { BoardsService } from './boards.service';
-import { NewBoardInput } from './create-board.dto';
+
+enum BoardEvents {
+  BOARD_CREATED = 'boardCreated',
+}
 
 @Resolver(of => Board)
 export class BoardsResolver {
-  constructor(private readonly boardsService: BoardsService) {}
+  constructor(
+    private readonly boardsService: BoardsService,
+    @Inject('PUB_SUB') private readonly pubsub: PubSub,
+  ) {}
 
   @Query(returns => Board)
   async board(@Args('id') id: string): Promise<Board> {
     const board = await this.boardsService.findOneById(id);
+
     if (!board) {
       throw new NotFoundException(id);
     }
@@ -27,12 +36,21 @@ export class BoardsResolver {
   async createBoard(
     @Args('newBoardInput') newBoardData: NewBoardInput,
   ): Promise<Board> {
-    const board = await this.boardsService.create(newBoardData);
-    return board;
+    const newBoard = await this.boardsService.create(newBoardData);
+
+    this.pubsub.publish(BoardEvents.BOARD_CREATED, { newBoard });
+
+    return newBoard;
   }
 
   @Mutation(returns => Boolean)
-  async removeRecipe(@Args('id') id: string) {
-    return this.boardsService.remove(id);
+  async removeBoard(@Args('id') id: string) {
+    const removedBoard = await this.boardsService.remove(id);
+    return !!removedBoard;
+  }
+
+  @Subscription(returns => Board)
+  async boardCreated() {
+    return this.pubsub.asyncIterator(BoardEvents.BOARD_CREATED);
   }
 }
