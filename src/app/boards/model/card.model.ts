@@ -1,4 +1,4 @@
-import { Field, ID, ObjectType } from 'type-graphql';
+import { Field, ID, ObjectType, Int } from 'type-graphql';
 
 @ObjectType()
 export class Card {
@@ -7,6 +7,9 @@ export class Card {
 
   @Field()
   title: string;
+
+  @Field(type => Int)
+  index: number;
 
   @Field()
   text: string;

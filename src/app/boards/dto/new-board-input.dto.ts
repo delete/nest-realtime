@@ -1,10 +1,12 @@
 import { Field, InputType } from 'type-graphql';
 
+import { IBoard } from '../schema/board.schema';
+
 @InputType()
 export class NewBoardInput {
-  @Field()
+  @Field(tyoe => String)
   name: string;
 
   @Field()
-  owner: string;
+  ownerId: string;
 }

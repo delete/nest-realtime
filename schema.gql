@@ -18,19 +18,23 @@ input AddListToBoardInput {
 type Board {
   id: ID!
   name: String!
-  owner: String!
+  index: Int!
+  owner: User!
+  team: [User!]!
   lists: [List!]!
 }
 
 type Card {
   id: ID!
   title: String!
+  index: Int!
   text: String!
 }
 
 type List {
   id: ID!
   name: String!
+  index: Int!
   cards: [Card!]!
 }
 
@@ -39,19 +43,32 @@ type Mutation {
   removeBoard(id: String!): Boolean!
   addList(addListToBoardInput: AddListToBoardInput!): Board!
   addCard(addCardToListInput: AddCardToListInput!): Board!
+  createUser(newUserInput: NewUserInput!): User!
 }
 
 input NewBoardInput {
   name: String!
-  owner: String!
+  ownerId: String!
+}
+
+input NewUserInput {
+  name: String!
+  email: String!
 }
 
 type Query {
   board(id: String!): Board!
-  boards: [Board!]!
+  boards(ownerId: String!): [Board!]!
+  users: [User!]!
 }
 
 type Subscription {
   boardCreated: Board!
   boardRemoved: Board!
+}
+
+type User {
+  id: ID!
+  name: String!
+  email: String!
 }

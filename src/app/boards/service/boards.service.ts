@@ -8,22 +8,43 @@ import { IList } from '../schema/list.schema';
 import { NewBoardInput } from '../dto/new-board-input.dto';
 import { AddListToBoardInput } from '../dto/add-list-input.dto';
 import { AddCardToListInput } from '../dto/add-card-input';
+import { IUser } from '../schema/user.schema';
 
 @Injectable()
 export class BoardsService {
   constructor(
     @InjectModel('Board') private readonly boardModel: Model<IBoard>,
+    @InjectModel('User') private readonly userModel: Model<IUser>,
   ) {}
 
   async create(createBoardDto: NewBoardInput): Promise<IBoard> {
-    const createdBaord = new this.boardModel(createBoardDto);
-    const newBoard = await createdBaord.save();
+    const boardsCount = await this.count(createBoardDto.ownerId);
+    const user = await this.userModel.findById(createBoardDto.ownerId);
+
+    const createdBoard = new this.boardModel(createBoardDto);
+    createdBoard.index = boardsCount;
+    createdBoard.owner = user;
+    createdBoard.team.push(user);
+
+    const newBoard = await createdBoard.save();
+
     newBoard.id = newBoard._id;
     return newBoard;
   }
 
-  async findAll(): Promise<IBoard[]> {
-    return this.boardModel.find().exec();
+  async findAll(ownerId: string): Promise<IBoard[]> {
+    return this.boardModel
+      .find({ owner: { _id: ownerId } })
+      .sort({ index: 1 })
+      .populate('owner')
+      .exec();
+  }
+
+  async count(ownerId: string): Promise<number> {
+    return this.boardModel
+      .find({ owner: { _id: ownerId } })
+      .count()
+      .exec();
   }
 
   async findOneById(id: string): Promise<IBoard | null> {
@@ -44,7 +65,7 @@ export class BoardsService {
     const { boardId, name } = addListInput;
     const board = await this.boardModel.findById(boardId);
 
-    board.lists.push({ name } as IList);
+    board.lists.push({ name, index: board.lists.length } as IList);
 
     return await board.save();
   }
@@ -55,7 +76,7 @@ export class BoardsService {
 
     const list = board.lists.find(l => l.id === listId);
 
-    list.cards.push({ title, text } as ICard);
+    list.cards.push({ title, text, index: list.cards.length } as ICard);
 
     return await board.save();
   }

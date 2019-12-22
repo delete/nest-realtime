@@ -1,4 +1,4 @@
-import { Field, ID, ObjectType } from 'type-graphql';
+import { Field, ID, ObjectType, Int } from 'type-graphql';
 
 import { Card } from './card.model';
 
@@ -10,6 +10,9 @@ export class List {
   @Field()
   name: string;
 
-  @Field(type => Card)
+  @Field(type => Int)
+  index: number;
+
+  @Field(type => [Card])
   cards: Card[];
 }

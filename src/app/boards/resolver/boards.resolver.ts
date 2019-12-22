@@ -22,7 +22,7 @@ export class BoardsResolver {
   ) {}
 
   @Query(returns => Board)
-  async board(@Args('id') id: string): Promise<Board> {
+  async board(@Args('id') id: string) {
     const board = await this.boardsService.findOneById(id);
 
     if (!board) {
@@ -32,14 +32,12 @@ export class BoardsResolver {
   }
 
   @Query(returns => [Board])
-  async boards(): Promise<Board[]> {
-    return this.boardsService.findAll();
+  async boards(@Args('ownerId') ownerId: string) {
+    return this.boardsService.findAll(ownerId);
   }
 
   @Mutation(returns => Board)
-  async createBoard(
-    @Args('newBoardInput') newBoardinput: NewBoardInput,
-  ): Promise<Board> {
+  async createBoard(@Args('newBoardInput') newBoardinput: NewBoardInput) {
     const newBoard = await this.boardsService.create(newBoardinput);
 
     this.pubsub.publish(BoardEvents.BOARD_CREATED, {
@@ -63,7 +61,7 @@ export class BoardsResolver {
   @Mutation(returns => Board)
   async addList(
     @Args('addListToBoardInput') addListToBoardInput: AddListToBoardInput,
-  ): Promise<Board> {
+  ) {
     const board = await this.boardsService.addList(addListToBoardInput);
 
     this.pubsub.publish(BoardEvents.BOARD_CHANGED, {
@@ -76,7 +74,7 @@ export class BoardsResolver {
   @Mutation(returns => Board)
   async addCard(
     @Args('addCardToListInput') addCardToListInput: AddCardToListInput,
-  ): Promise<Board> {
+  ) {
     const board = await this.boardsService.addCard(addCardToListInput);
 
     this.pubsub.publish(BoardEvents.BOARD_CHANGED, {
