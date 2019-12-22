@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PubSub } from 'graphql-subscriptions';
 
-import { BoardsResolver } from './boards.resolver';
-import { BoardsService } from './boards.service';
-import { BoardSchema } from './entity/board.entity';
+import { BoardsResolver } from './resolver/boards.resolver';
+import { BoardsService } from './service/boards.service';
+import { BoardSchema } from './schema/board.schema';
 
 @Module({
   imports: [
