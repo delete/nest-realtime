@@ -1,18 +1,15 @@
 import { Field, ID, ObjectType } from 'type-graphql';
 
-import { List } from './list.model';
+import { Card } from './card.model';
 
 @ObjectType()
-export class Board {
+export class List {
   @Field(type => ID)
   id?: string;
 
   @Field()
   name: string;
 
-  @Field()
-  owner: string;
-
-  @Field(type => List)
-  lists: List[];
+  @Field(type => Card)
+  cards: Card[];
 }
