@@ -3,15 +3,42 @@
 # !!!   DO NOT MODIFY THIS FILE BY YOURSELF   !!!
 # -----------------------------------------------
 
+input AddCardToListInput {
+  boardId: ID!
+  listId: ID!
+  title: String!
+  text: String!
+}
+
+input AddListToBoardInput {
+  boardId: ID!
+  name: String!
+}
+
 type Board {
   id: ID!
   name: String!
   owner: String!
+  lists: [List!]!
+}
+
+type Card {
+  id: ID!
+  title: String!
+  text: String!
+}
+
+type List {
+  id: ID!
+  name: String!
+  cards: [Card!]!
 }
 
 type Mutation {
   createBoard(newBoardInput: NewBoardInput!): Board!
   removeBoard(id: String!): Boolean!
+  addList(addListToBoardInput: AddListToBoardInput!): Board!
+  addCard(addCardToListInput: AddCardToListInput!): Board!
 }
 
 input NewBoardInput {
