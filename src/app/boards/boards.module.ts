@@ -1,21 +1,17 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { PubSub } from 'graphql-subscriptions';
 
-import { BoardsResolver } from './resolver/boards.resolver';
 import { BoardsService } from './service/boards.service';
-import { BoardSchema } from './schema/board.schema';
-import { UserSchema } from './schema/user.schema';
 import { UsersService } from './service/users.service';
+import { BoardsResolver } from './resolver/boards.resolver';
 import { UsersResolver } from './resolver/users.resolver';
+import { Board } from './model/board.model';
+import { User } from './model/user.model';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: 'Board', schema: BoardSchema },
-      { name: 'User', schema: UserSchema },
-    ]),
-  ],
+  imports: [TypeOrmModule.forFeature([User, Board])],
   controllers: [],
   providers: [
     BoardsService,

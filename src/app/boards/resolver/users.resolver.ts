@@ -2,7 +2,7 @@ import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 
 import { Board } from '../model/board.model';
 import { NewUserInput } from '../dto/new-user-input';
-import { User } from '../model/user.mode';
+import { User } from '../model/user.model';
 import { UsersService } from '../service/users.service';
 
 @Resolver(of => Board)

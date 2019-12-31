@@ -7,6 +7,10 @@ import { NewBoardInput } from '../dto/new-board-input.dto';
 import { BoardsService } from '../service/boards.service';
 import { AddListToBoardInput } from '../dto/add-list-input.dto';
 import { AddCardToListInput } from '../dto/add-card-input';
+// import { UpdateBoardInput } from '../dto/update-board-input';
+import { BoardsArgs } from '../dto/boards.args';
+import { Card } from '../model/card.model';
+import { List } from '../model/list.model';
 
 enum BoardEvents {
   BOARD_CREATED = 'boardCreated',
@@ -14,7 +18,7 @@ enum BoardEvents {
   BOARD_CHANGED = 'boardChanged',
 }
 
-@Resolver(of => Board)
+@Resolver(Board)
 export class BoardsResolver {
   constructor(
     private readonly boardsService: BoardsService,
@@ -32,8 +36,8 @@ export class BoardsResolver {
   }
 
   @Query(returns => [Board])
-  async boards(@Args('ownerId') ownerId: string) {
-    return this.boardsService.findAll(ownerId);
+  async boards(@Args() boardsArgs: BoardsArgs) {
+    return this.boardsService.findAll(boardsArgs);
   }
 
   @Mutation(returns => Board)
@@ -58,39 +62,55 @@ export class BoardsResolver {
     return !!removedBoard;
   }
 
-  @Mutation(returns => Board)
+  // @Mutation(returns => Board)
+  // async updateBoard(
+  //   @Args('updateBoardInput') updateBoardInput: UpdateBoardInput,
+  // ) {
+  //   const { id, board } = updateBoardInput;
+  //   const updatedBoard = await this.boardsService.update(id, {
+  //     ...board,
+  //   } as IBoard);
+
+  //   this.pubsub.publish(BoardEvents.BOARD_CHANGED, {
+  //     [BoardEvents.BOARD_CHANGED]: updatedBoard,
+  //   });
+
+  //   return !!updatedBoard;
+  // }
+
+  @Mutation(returns => List)
   async addList(
     @Args('addListToBoardInput') addListToBoardInput: AddListToBoardInput,
   ) {
-    const board = await this.boardsService.addList(addListToBoardInput);
+    const list = await this.boardsService.addList(addListToBoardInput);
 
-    this.pubsub.publish(BoardEvents.BOARD_CHANGED, {
-      [BoardEvents.BOARD_CHANGED]: board,
-    });
+    // this.pubsub.publish(BoardEvents.BOARD_CHANGED, {
+    //   [BoardEvents.BOARD_CHANGED]: board,
+    // });
 
-    return board;
+    return list;
   }
 
-  @Mutation(returns => Board)
+  @Mutation(returns => Card)
   async addCard(
     @Args('addCardToListInput') addCardToListInput: AddCardToListInput,
   ) {
-    const board = await this.boardsService.addCard(addCardToListInput);
+    const card = await this.boardsService.addCard(addCardToListInput);
 
-    this.pubsub.publish(BoardEvents.BOARD_CHANGED, {
-      [BoardEvents.BOARD_CHANGED]: board,
-    });
+    // this.pubsub.publish(BoardEvents.BOARD_CHANGED, {
+    //   [BoardEvents.BOARD_CHANGED]: board,
+    // });
 
-    return board;
+    return card;
   }
 
-  @Subscription(returns => Board)
-  async boardCreated() {
-    return this.pubsub.asyncIterator(BoardEvents.BOARD_CREATED);
-  }
+  // @Subscription(returns => Board)
+  // async boardCreated() {
+  //   return this.pubsub.asyncIterator(BoardEvents.BOARD_CREATED);
+  // }
 
-  @Subscription(returns => Board)
-  async boardRemoved() {
-    return this.pubsub.asyncIterator(BoardEvents.BOARD_REMOVED);
-  }
+  // @Subscription(returns => Board)
+  // async boardRemoved() {
+  //   return this.pubsub.asyncIterator(BoardEvents.BOARD_REMOVED);
+  // }
 }

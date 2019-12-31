@@ -1,83 +1,112 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
-import { IBoard } from '../schema/board.schema';
-import { ICard } from '../schema/card.schema';
-import { IList } from '../schema/list.schema';
 import { NewBoardInput } from '../dto/new-board-input.dto';
 import { AddListToBoardInput } from '../dto/add-list-input.dto';
 import { AddCardToListInput } from '../dto/add-card-input';
-import { IUser } from '../schema/user.schema';
+import { BoardsArgs } from '../dto/boards.args';
+import { Board } from '../model/board.model';
+import { User } from '../model/user.model';
+import { List } from '../model/list.model';
+import { Card } from '../model/card.model';
 
 @Injectable()
 export class BoardsService {
   constructor(
-    @InjectModel('Board') private readonly boardModel: Model<IBoard>,
-    @InjectModel('User') private readonly userModel: Model<IUser>,
+    @InjectRepository(Board)
+    private readonly boardRepository: Repository<Board>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
-  async create(createBoardDto: NewBoardInput): Promise<IBoard> {
-    const boardsCount = await this.count(createBoardDto.ownerId);
-    const user = await this.userModel.findById(createBoardDto.ownerId);
+  async create(createBoardDto: NewBoardInput): Promise<Board> {
+    const { ownerId } = createBoardDto;
+    const boardsCount = await this.count(ownerId);
+    const user = await this.userRepository.findOne(ownerId);
 
-    const createdBoard = new this.boardModel(createBoardDto);
+    const createdBoard = this.boardRepository.create(createBoardDto);
     createdBoard.index = boardsCount;
     createdBoard.owner = user;
-    createdBoard.team.push(user);
+    createdBoard.team = [user];
 
-    const newBoard = await createdBoard.save();
-
-    newBoard.id = newBoard._id;
-    return newBoard;
+    return await this.boardRepository.save(createdBoard);
   }
 
-  async findAll(ownerId: string): Promise<IBoard[]> {
-    return this.boardModel
-      .find({ owner: { _id: ownerId } })
-      .sort({ index: 1 })
-      .populate('owner')
-      .exec();
+  async findAll(args: BoardsArgs): Promise<Board[]> {
+    const { ownerId } = args;
+
+    return this.boardRepository.find({
+      where: { 'owner.email': ownerId },
+      order: { index: 'ASC' },
+    });
   }
 
   async count(ownerId: string): Promise<number> {
-    return this.boardModel
-      .find({ owner: { _id: ownerId } })
-      .count()
-      .exec();
+    return this.boardRepository.count({
+      where: { owner: { _id: ownerId } },
+    });
   }
 
-  async findOneById(id: string): Promise<IBoard | null> {
-    return this.boardModel.findById(id).exec();
+  async findOneById(id: string): Promise<Board | null> {
+    return this.boardRepository.findOne(id);
   }
 
-  async remove(id: string): Promise<IBoard | null> {
-    const removedBoard = await this.boardModel.findByIdAndRemove(id).exec();
+  async remove(id: string): Promise<Board | null> {
+    const board = await this.boardRepository.findOne(id);
+    await this.boardRepository.update(board._id, { deleted: true });
+    return board;
+  }
 
-    if (removedBoard) {
-      removedBoard.id = removedBoard._id;
+  // async update(id: string, board: IBoard): Promise<IBoard | null> {
+  //   const updated = await this.boardModel
+  //     .update({ _id: id }, { $set: { ...board } }, { multi: true, new: true })
+  //     .exec();
+
+  //   if (updated) {
+  //     updated.id = updated._id;
+  //   }
+
+  //   return updated;
+  // }
+
+  async addList(addListInput: AddListToBoardInput): Promise<List> {
+    const { boardId, name } = addListInput;
+    const board = await this.boardRepository.findOne(boardId);
+
+    if (!board) {
+      throw new NotFoundException(`Board: ${boardId}`);
     }
 
-    return removedBoard;
+    const list = new List(name, board.lists.length);
+
+    board.lists.push(list);
+
+    await this.boardRepository.update({ _id: board._id }, board);
+
+    return list;
   }
 
-  async addList(addListInput: AddListToBoardInput): Promise<IBoard> {
-    const { boardId, name } = addListInput;
-    const board = await this.boardModel.findById(boardId);
-
-    board.lists.push({ name, index: board.lists.length } as IList);
-
-    return await board.save();
-  }
-
-  async addCard(addCardInput: AddCardToListInput): Promise<IBoard> {
+  async addCard(addCardInput: AddCardToListInput): Promise<Card> {
     const { boardId, listId, title, text } = addCardInput;
-    const board = await this.boardModel.findById(boardId);
+    const board = await this.boardRepository.findOne(boardId);
 
-    const list = board.lists.find(l => l.id === listId);
+    if (!board) {
+      throw new NotFoundException(`Board: ${boardId}`);
+    }
 
-    list.cards.push({ title, text, index: list.cards.length } as ICard);
+    const list = board.lists.find(l => l._id === listId);
 
-    return await board.save();
+    if (!list) {
+      throw new NotFoundException(`List: ${listId}`);
+    }
+
+    const card = new Card(title, text, list.cards.length);
+
+    list.cards.push(card);
+
+    await this.boardRepository.update({ _id: board._id }, board);
+
+    return card;
   }
 }

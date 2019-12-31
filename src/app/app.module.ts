@@ -1,15 +1,20 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { GraphQLModule } from '@nestjs/graphql';
 
 import { BoardsModule } from './boards/boards.module';
+import { Board } from './boards/model/board.model';
+import { User } from './boards/model/user.model';
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb://localhost/nest', {
+    TypeOrmModule.forRoot({
+      type: 'mongodb',
+      host: 'localhost',
+      port: 27017,
+      database: 'nest',
+      entities: [User, Board],
       useUnifiedTopology: true,
-      useNewUrlParser: true,
-      useFindAndModify: false,
     }),
     GraphQLModule.forRoot({
       installSubscriptionHandlers: true,
