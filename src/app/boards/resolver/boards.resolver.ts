@@ -1,4 +1,4 @@
-import { NotFoundException, Inject } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 
@@ -7,8 +7,8 @@ import { NewBoardInput } from '../dto/new-board-input.dto';
 import { BoardsService } from '../service/boards.service';
 import { AddListToBoardInput } from '../dto/add-list-input.dto';
 import { AddCardToListInput } from '../dto/add-card-input';
-// import { UpdateBoardInput } from '../dto/update-board-input';
-import { BoardsArgs } from '../dto/boards.args';
+import { UpdateBoardInput } from '../dto/update-board-input';
+import { GetBoardsArgs } from '../dto/boards.args';
 import { Card } from '../model/card.model';
 import { List } from '../model/list.model';
 
@@ -25,92 +25,54 @@ export class BoardsResolver {
     @Inject('PUB_SUB') private readonly pubsub: PubSub,
   ) {}
 
-  @Query(returns => Board)
+  @Query(() => Board)
   async board(@Args('id') id: string) {
-    const board = await this.boardsService.findOneById(id);
-
-    if (!board) {
-      throw new NotFoundException(id);
-    }
-    return board;
+    return await this.boardsService.findOneById(id);
   }
 
-  @Query(returns => [Board])
-  async boards(@Args() boardsArgs: BoardsArgs) {
-    return this.boardsService.findAll(boardsArgs);
+  @Query(() => [Board])
+  async boards(@Args() args: GetBoardsArgs) {
+    return this.boardsService.findAll(args);
   }
 
-  @Mutation(returns => Board)
-  async createBoard(@Args('newBoardInput') newBoardinput: NewBoardInput) {
-    const newBoard = await this.boardsService.create(newBoardinput);
+  @Mutation(() => Board)
+  async createBoard(@Args('input') input: NewBoardInput) {
+    const newBoard = await this.boardsService.create(input);
 
-    this.pubsub.publish(BoardEvents.BOARD_CREATED, {
-      [BoardEvents.BOARD_CREATED]: newBoard,
-    });
+    this.publish(BoardEvents.BOARD_CREATED, newBoard);
 
     return newBoard;
   }
 
-  @Mutation(returns => Boolean)
+  @Mutation(() => Boolean)
   async removeBoard(@Args('id') id: string) {
-    const removedBoard = await this.boardsService.remove(id);
-
-    this.pubsub.publish(BoardEvents.BOARD_REMOVED, {
-      [BoardEvents.BOARD_REMOVED]: removedBoard,
-    });
-
-    return !!removedBoard;
+    return await this.boardsService.softRemove(id);
   }
 
-  // @Mutation(returns => Board)
-  // async updateBoard(
-  //   @Args('updateBoardInput') updateBoardInput: UpdateBoardInput,
-  // ) {
-  //   const { id, board } = updateBoardInput;
-  //   const updatedBoard = await this.boardsService.update(id, {
-  //     ...board,
-  //   } as IBoard);
-
-  //   this.pubsub.publish(BoardEvents.BOARD_CHANGED, {
-  //     [BoardEvents.BOARD_CHANGED]: updatedBoard,
-  //   });
-
-  //   return !!updatedBoard;
-  // }
-
-  @Mutation(returns => List)
-  async addList(
-    @Args('addListToBoardInput') addListToBoardInput: AddListToBoardInput,
+  @Mutation(returns => Boolean)
+  async updateBoard(
+    @Args('id') id: string,
+    @Args('input') input: UpdateBoardInput,
   ) {
-    const list = await this.boardsService.addList(addListToBoardInput);
-
-    // this.pubsub.publish(BoardEvents.BOARD_CHANGED, {
-    //   [BoardEvents.BOARD_CHANGED]: board,
-    // });
-
-    return list;
+    return await this.boardsService.update(id, input);
   }
 
-  @Mutation(returns => Card)
-  async addCard(
-    @Args('addCardToListInput') addCardToListInput: AddCardToListInput,
-  ) {
-    const card = await this.boardsService.addCard(addCardToListInput);
-
-    // this.pubsub.publish(BoardEvents.BOARD_CHANGED, {
-    //   [BoardEvents.BOARD_CHANGED]: board,
-    // });
-
-    return card;
+  @Mutation(() => List)
+  async addList(@Args('input') input: AddListToBoardInput) {
+    return await this.boardsService.addList(input);
   }
 
-  // @Subscription(returns => Board)
-  // async boardCreated() {
-  //   return this.pubsub.asyncIterator(BoardEvents.BOARD_CREATED);
-  // }
+  @Mutation(() => Card)
+  async addCard(@Args('input') input: AddCardToListInput) {
+    return await this.boardsService.addCard(input);
+  }
 
-  // @Subscription(returns => Board)
-  // async boardRemoved() {
-  //   return this.pubsub.asyncIterator(BoardEvents.BOARD_REMOVED);
-  // }
+  @Subscription(() => Board)
+  async boardCreated() {
+    return this.pubsub.asyncIterator(BoardEvents.BOARD_CREATED);
+  }
+
+  private publish(event: BoardEvents, data: any) {
+    this.pubsub.publish(event, { [event]: data });
+  }
 }

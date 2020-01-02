@@ -1,7 +1,7 @@
 import { ArgsType, Field } from 'type-graphql';
 
 @ArgsType()
-export class BoardsArgs {
+export class GetBoardsArgs {
   @Field()
   ownerId: string;
 }

@@ -1,12 +1,13 @@
-import { Field, InputType, ID } from 'type-graphql';
-
-import { Board } from '../model/board.model';
+import { Field, InputType, ID, Int } from 'type-graphql';
 
 @InputType()
 export class UpdateBoardInput {
-  @Field(tyoe => ID)
-  id: string;
+  @Field({ nullable: true })
+  name?: string;
 
-  @Field(type => Board)
-  board: Board;
+  @Field(type => Int, { nullable: true })
+  index?: number;
+
+  @Field({ nullable: true })
+  deleted?: boolean;
 }

@@ -44,6 +44,5 @@ export class Board {
   @BeforeInsert()
   initValues() {
     this.lists = [];
-    this.team = [];
   }
 }
